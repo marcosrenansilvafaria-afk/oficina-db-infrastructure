@@ -43,6 +43,12 @@ resource "aws_security_group" "rds" {
   description = "Permite trafego PostgreSQL apenas das subnets do cluster Kubernetes e da Lambda de autenticacao"
   vpc_id      = aws_vpc.this.id
 
+  # Security Groups sao stateful: respostas a trafego de ingress permitido nao
+  # exigem regra de egress correspondente. Removemos explicitamente a regra de
+  # egress "allow all" que a AWS cria por padrao, ja que o RDS nao precisa
+  # iniciar conexoes de saida.
+  egress = []
+
   tags = {
     Name = "oficina-${var.environment}-rds-sg"
   }
@@ -66,18 +72,6 @@ resource "aws_security_group_rule" "rds_ingress_auth_lambda" {
   cidr_blocks       = var.auth_lambda_cidr_blocks
   security_group_id = aws_security_group.rds.id
   description       = "Acesso PostgreSQL a partir da Lambda de autenticacao"
-}
-
-# Sem egress explicito de saida ampla: o RDS nao precisa iniciar conexoes de saida.
-# O SG mantem apenas a regra de egress padrao minima abaixo (necessaria para respostas TCP).
-resource "aws_security_group_rule" "rds_egress_self" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.rds.id
-  description       = "Egress padrao para respostas de conexoes estabelecidas (stateful)"
 }
 
 # -----------------------------------------------------------------------------

@@ -96,6 +96,26 @@ flowchart TB
   o custo fixo por segredo, que não é coberto pelo free tier.
 - **State remoto com lock**: backend `s3` + `dynamodb_table` evita corrupção de
   state por execuções concorrentes.
+- **Security Group sem egress amplo**: grupos de segurança da AWS são *stateful*
+  — respostas a conexões de entrada já permitidas não exigem regra de saída
+  correspondente. Por isso o SG do RDS é criado com `egress = []` (nenhuma regra
+  de saída), removendo o "allow all" que a AWS cria por padrão.
+
+### Trade-offs de custo aceitos (`checkov`)
+
+O scan de segurança (`checkov`) sinaliza algumas práticas recomendadas que
+optamos por **não** aplicar agora, para manter o ambiente dentro do free tier.
+Cada uma está marcada com `#checkov:skip` em [`rds.tf`](rds.tf), com a
+justificativa inline:
+
+| Check | Recomendação | Por que não aplicamos agora |
+|---|---|---|
+| `CKV_AWS_157` | Habilitar Multi-AZ | Dobra o custo da instância (roda uma réplica standby) |
+| `CKV_AWS_353` | Habilitar Performance Insights | Não suportado em `db.t3.micro` (memória insuficiente) |
+| `CKV_AWS_118` | Habilitar Enhanced Monitoring | Exige role IAM extra e gera custo de ingestão no CloudWatch Logs |
+
+Ao migrar para uma classe de instância maior ou ambiente de produção real,
+reavalie esses três pontos e remova os `#checkov:skip` correspondentes.
 
 ## Pré-requisitos
 

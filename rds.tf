@@ -1,4 +1,7 @@
 resource "aws_db_instance" "this" {
+  #checkov:skip=CKV_AWS_157: Multi-AZ dobra o custo da instancia (nao coberto integralmente pelo free tier). Aceito o risco de indisponibilidade em ambiente de estudo/demonstracao; usar var.multi_az=true em producao real.
+  #checkov:skip=CKV_AWS_353: Performance Insights nao e suportado em db.t3.micro (memoria insuficiente) para a engine Postgres. Reavaliar ao subir de classe de instancia.
+  #checkov:skip=CKV_AWS_118: Enhanced Monitoring exige role IAM adicional e gera custo de ingestao no CloudWatch Logs proporcional a granularidade. Fora de escopo para reduzir custo no free tier.
   identifier = "oficina-${var.environment}-db"
 
   engine         = "postgres"
@@ -20,6 +23,11 @@ resource "aws_db_instance" "this" {
   publicly_accessible    = false
 
   multi_az = var.multi_az
+
+  iam_database_authentication_enabled = true
+  auto_minor_version_upgrade          = true
+  copy_tags_to_snapshot               = true
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
 
   backup_retention_period = var.backup_retention_period
   backup_window           = var.backup_window
