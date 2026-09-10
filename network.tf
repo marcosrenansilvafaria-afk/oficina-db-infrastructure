@@ -2,8 +2,8 @@
 # VPC dedicada à infraestrutura de banco de dados
 # -----------------------------------------------------------------------------
 
-#checkov:skip=CKV2_AWS_11: VPC Flow Logs gera custo de ingestao/armazenamento (CloudWatch Logs ou S3) proporcional ao trafego. Fora de escopo para reduzir custo no free tier.
 resource "aws_vpc" "this" {
+  #checkov:skip=CKV2_AWS_11: VPC Flow Logs gera custo de ingestao/armazenamento (CloudWatch Logs ou S3) proporcional ao trafego. Fora de escopo para reduzir custo no free tier.
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
