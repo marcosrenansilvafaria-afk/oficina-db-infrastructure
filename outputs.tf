@@ -28,7 +28,7 @@ output "vpc_id" {
   value       = aws_vpc.this.id
 }
 
-output "secrets_manager_secret_arn" {
-  description = "ARN do segredo no AWS Secrets Manager contendo as credenciais de conexão do banco."
-  value       = aws_secretsmanager_secret.db_credentials.arn
+output "ssm_parameter_prefix" {
+  description = "Prefixo dos parâmetros no SSM Parameter Store contendo as credenciais de conexão do banco (/oficina/<environment>/db/*)."
+  value       = "/oficina/${var.environment}/db"
 }

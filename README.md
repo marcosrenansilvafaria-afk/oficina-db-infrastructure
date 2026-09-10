@@ -30,9 +30,9 @@ da Fase 3 do Tech Challenge, dentro da arquitetura de 4 repositórios independen
 Provisionar, de forma declarativa e reprodutível, uma instância PostgreSQL
 gerenciada (Amazon RDS) isolada em uma VPC dedicada, acessível **apenas** pelas
 subnets do cluster Kubernetes (Repositório 2) e da Lambda de autenticação
-(Repositório 4). As credenciais de conexão são publicadas no AWS Secrets Manager,
-eliminando a necessidade de distribuir a senha em texto puro entre os demais
-repositórios.
+(Repositório 4). As credenciais de conexão são publicadas no AWS Systems Manager
+Parameter Store (SecureString), eliminando a necessidade de distribuir a senha
+em texto puro entre os demais repositórios, sem o custo fixo do Secrets Manager.
 
 ## Tecnologias
 
@@ -60,7 +60,7 @@ flowchart TB
     K8S["Cluster Kubernetes\n(Repositório 2)\nCIDR: var.k8s_cluster_cidr_blocks"] -- "5432/tcp" --> SG
     LAMBDA["Lambda de Autenticação\n(Repositório 4)\nCIDR: var.auth_lambda_cidr_blocks"] -- "5432/tcp" --> SG
 
-    RDS -. "credenciais publicadas" .-> SM[["AWS Secrets Manager\noficina/env/db-credentials"]]
+    RDS -. "credenciais publicadas" .-> SM[["SSM Parameter Store\n/oficina/env/db/*"]]
     K8S -. "lê credenciais" .-> SM
     LAMBDA -. "lê credenciais" .-> SM
 ```
@@ -75,7 +75,7 @@ flowchart TB
 | `aws_security_group.rds` + regras | Acesso restrito à porta 5432 apenas para CIDRs do K8s e da Lambda |
 | `aws_db_parameter_group.this` | Parâmetros do PostgreSQL (SSL obrigatório, log de conexões) |
 | `aws_db_instance.this` | Instância RDS PostgreSQL com backup automático e storage criptografado |
-| `aws_secretsmanager_secret*` | Credenciais de conexão publicadas no Secrets Manager |
+| `aws_ssm_parameter.*` | Credenciais de conexão publicadas no SSM Parameter Store (SecureString) |
 
 ## Segurança
 
@@ -89,9 +89,11 @@ flowchart TB
   parametrizados via `k8s_cluster_cidr_blocks` e `auth_lambda_cidr_blocks`.
 - **Storage e conexão criptografados**: `storage_encrypted = true` e
   `rds.force_ssl = 1` no Parameter Group.
-- **Secrets Manager**: outras aplicações devem buscar a credencial em runtime no
-  Secrets Manager (ex: via External Secrets Operator no Kubernetes, ou SDK da AWS
-  na Lambda), em vez de recebê-la propagada em variáveis de ambiente estáticas.
+- **SSM Parameter Store**: outras aplicações devem buscar a credencial em runtime
+  no Parameter Store (ex: via External Secrets Operator no Kubernetes, ou SDK da
+  AWS na Lambda), em vez de recebê-la propagada em variáveis de ambiente estáticas.
+  Optamos por Parameter Store (SecureString) em vez de Secrets Manager para evitar
+  o custo fixo por segredo, que não é coberto pelo free tier.
 - **State remoto com lock**: backend `s3` + `dynamodb_table` evita corrupção de
   state por execuções concorrentes.
 
@@ -99,7 +101,7 @@ flowchart TB
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.6.0
 - Conta AWS com credenciais configuradas (`aws configure` ou variáveis de ambiente)
-- Permissões IAM para criar VPC, RDS, Security Groups e Secrets Manager
+- Permissões IAM para criar VPC, RDS, Security Groups e parâmetros SSM
 - Bucket S3 e tabela DynamoDB do backend remoto já criados (ver seção abaixo)
 
 ## Bootstrap do backend remoto
@@ -176,7 +178,7 @@ Antes de usar a pipeline, configure em **Settings**:
 | `db_subnet_group_name` | Nome do DB Subnet Group |
 | `rds_security_group_id` | ID do Security Group do RDS |
 | `vpc_id` | ID da VPC criada |
-| `secrets_manager_secret_arn` | ARN do segredo com as credenciais |
+| `ssm_parameter_prefix` | Prefixo dos parâmetros no SSM Parameter Store com as credenciais |
 
 ## Variáveis
 
