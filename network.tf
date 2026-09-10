@@ -2,6 +2,7 @@
 # VPC dedicada à infraestrutura de banco de dados
 # -----------------------------------------------------------------------------
 
+#checkov:skip=CKV2_AWS_11: VPC Flow Logs gera custo de ingestao/armazenamento (CloudWatch Logs ou S3) proporcional ao trafego. Fora de escopo para reduzir custo no free tier.
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -9,6 +10,17 @@ resource "aws_vpc" "this" {
 
   tags = {
     Name = "oficina-${var.environment}-db-vpc"
+  }
+}
+
+# Restringe todo trafego do Security Group padrao da VPC (criado automaticamente
+# pela AWS). Nenhuma regra e adicionada aqui de proposito - o SG padrao nao deve
+# ser usado por nenhum recurso.
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name = "oficina-${var.environment}-db-vpc-default-sg-locked"
   }
 }
 

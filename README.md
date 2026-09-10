@@ -113,6 +113,8 @@ justificativa inline:
 | `CKV_AWS_157` | Habilitar Multi-AZ | Dobra o custo da instância (roda uma réplica standby) |
 | `CKV_AWS_353` | Habilitar Performance Insights | Não suportado em `db.t3.micro` (memória insuficiente) |
 | `CKV_AWS_118` | Habilitar Enhanced Monitoring | Exige role IAM extra e gera custo de ingestão no CloudWatch Logs |
+| `CKV2_AWS_11` | Habilitar VPC Flow Logs | Custo de ingestão/armazenamento proporcional ao tráfego |
+| `CKV_AWS_337` (×5) | Usar KMS CMK nos parâmetros SSM | Chave gerenciada pela AWS (`aws/ssm`) é gratuita; CMK própria tem custo mensal fixo |
 
 Ao migrar para uma classe de instância maior ou ambiente de produção real,
 reavalie esses três pontos e remova os `#checkov:skip` correspondentes.
